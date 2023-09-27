@@ -11,6 +11,11 @@ by Alejandro Cuevas, t-alejandroc@microsoft.com/acuevasv@andrew.cmu.edu
 git clone
 cd ./project_folder
 pip install -r requirements.txt
+```
+
+After adding the relevant environment variables as detailed below,
+
+```
 python src/main.py
 ```
 
@@ -39,21 +44,23 @@ And that it's present in your folder `.env` file in your current working directo
 For example, if you want to test out and work on the application locally here is an example `.env` file:
 
 ```
-OPENAIAPIKEY='<your OPENAI API KEY here'
-AZOPENAIAPIKEY=''
-PERSONALKEY = ''
-AZENDPOINT=''
-DBSERVER = 'db_endpoint'
-DBDATABASE = 'db_name'
-DBUSERNAME = 'user'
-DBPASSWORD = 'password'
-DBDRIVER = '{ODBC Driver 17 for SQL Server}'
-DBSECRETKEY = 'lol-what-secret'
-LOCAL_DB = True
+OPENAIAPIKEY='<your OPENAI API KEY here if using>'
+AZOPENAIAPIKEY='<your AZURE OPENAI API KEY here if using>'
+PERSONALKEY = '<any additional API key if using>'
+AZENDPOINT='<url to the azure enpoint if using>'
+DBSERVER = 'db_endpoint if using'
+DBDATABASE = 'db_name if using'
+DBUSERNAME = 'user if using'
+DBPASSWORD = 'password if using'
+DBDRIVER = '{ODBC Driver 17 for SQL Server} if using'
+DBSECRETKEY = '<include a secret key here>'
+LOCAL_DB = False
 API_RETRY_DELAY = 5
 API_RETRIES = 3
 API_RETRY_FUNC = constant
 ```
+
+If `LOCAL_DB = True`, you do not need to include parameters for the DB-related variables. 
 
 Keys and DB strings can be modified in `get_db_credentials()` and `get_api_credentials()` in `util.py`
 
@@ -100,7 +107,7 @@ Below is the layout of the project:
 
 #### Study Design and Groups
 
-For our study, we used 3 study groups: 'baseline', 'dynamic probing', and 'active listener.'
+For our study, we used 3 study groups: 'baseline', 'dynamic probing', and 'active listener.' Please note that the `active listener` is referred to as the `member checker` in our publication.
 
 The study group decision and participant ID from Qualtrics gets passed to the webapp in the following way: http://localhost:5000/user_landing?sg=bs&req=test
 
@@ -115,28 +122,27 @@ The participant ID is currently generated in Qualtrics and passed to the applica
 #### Conversation Flow and Questions
 
 Currently, the conversation flow is defined in `INTERVIEW_SEQUENCE` as a list of functions. Essentially,
-the chatbot will follow the same procedure with each participant; the flow is not altered. I think a good mental model for the flow, is to think of the chatbot as following as script, where each entry in the script is a function that gets called in response to a participant's response. Currently, our script is static (we procedurally cally each function defined in the `INTERVIEW_SEQUENCE` list). However, we can build logic that alters (e.g., branches) what function is called from this list. 
+the chatbot will follow the same procedure with each participant; although questions can be added dynamically, the overall flow is the same across each interaction. 
 
-In our application, we call 'main question' the first topic question. That is, in the context of AI alignment, the main question is the question we are interested in hearing a response to. Then, any follow-ups are to further clarify the response we may get to this main question. These main questions can be modified in `question_bank.py`. Currently, we just randomly pick a set of questions that we will ask a participant. Then, we do our follow-ups based on those.
+In our application, we call 'main question' the first topic question. That is, in the context of AI alignment, the main question is the question we are interested in hearing a response to. Then, any follow-ups are to further clarify the response we may get to this main question. These main questions can be modified in `question_bank.py`. Currently, we randomly pick a set of questions that we will ask a participant. Then, the follow-up questions are generated based on both the main questions and prior responses.
 
 #### Creating or Modifying Agents
 
-To add a new agent, we must follow the following steps:
-1) Declaring a skill (see `skill` definitions). E.g.,`interviewer_skill = kernel.create_semantic_function...`
-2) Then wrapping it with the `AIModel` class. E.g., `interviewer = AIModel('interviewer', kernel, interviewer_skill)`. Make sure you give it a different module name.
-3) "Registering" the function in `skills/get_module_response()`. Note, registering in this case just means adding a conditional which catches the name of the module we are trying to call. We use `get_module_response()` as a wrapper to our skill calls because we can wrap this function with arbitrary error handling logic (e.g., retries with backoff decorator)
-4) Creating a function in `main.py` which will retrieve the module response. 
-    a) For example, the prober gets called in `engage_prober()` which is called in `get_followup_question()`.
+To add a new agent, you will need to follow these steps:
+1) Declare a skill (see `skill` definitions). E.g.,`interviewer_skill = kernel.create_semantic_function...`
+2) Wrap it with the `AIModel` class. E.g., `interviewer = AIModel('interviewer', kernel, interviewer_skill)`. Make sure you give it a unique module name.
+3) Register the function in `skills/get_module_response()`. Note, registering in this case just means adding a conditional which catches the name of the module we are trying to call. We use `get_module_response()` as a wrapper to our skill calls because we can wrap this function with arbitrary error handling logic (e.g., retries with backoff decorator)
+4) Create a function in `main.py` that will retrieve the module response. For example, the prober gets called in `engage_prober()` which is called in `get_followup_question()`.
 
-In semantic kernel, inputs to prompts are passed through a context. You can see in the prompts that there are wildcards like `{{$user_input}}`. Currently, I wrap every semantic kernel skill inside an `AIModel` class. You can call the skill by using `AIModel.skill` and set its context with `AIModel.context`. For instance, `interviewer.context['seed_question'] = <question>` is what you would use to set the `seed_question` to a value to pass to the prompt.
+In semantic kernel, inputs to prompts are passed through a context. You can see in the prompts that there are wildcards like `{{$user_input}}`. Currently, every semantic kernel skill is wrapped inside an `AIModel` class. You can call the skill by using `AIModel.skill` and set its context with `AIModel.context`. For instance, `interviewer.context['seed_question'] = <question>` is what you would use to set the `seed_question` to a value to pass to the prompt.
 
-I think modularity is extremely important for a multi-agent application. Our functions in `main.py` need to be able to do 3 things: 1) set the correct state for the module of interest, 2) call and receive the raw response from `get_module_response()`, 3) create an entry in the corresponding DB (if needed), 4) update the state as needed, 5) carry out any necessary string manipulations prior to sending the response to the frontend. For these reasons, I typically have a function which is called as part of the interview flow (e.g., `get_followup_question`), a function which will call the necessary module and handle context (e.g., `engage_prober`), and our `get_module_response` function which returns the endppoint result.
+We found modularity to be valuable for a multi-agent application. Our functions in `main.py` need to be able to do 3 things: 1) set the correct state for the module of interest, 2) call and receive the raw response from `get_module_response()`, creating an entry in the corresponding DB (if needed) and updating the state as needed, 3) returning the response, carrying out any necessary string manipulations prior to sending the response to the frontend. For these reasons, we include a function that is called as part of the interview flow (e.g., `get_followup_question`), a function that will call the necessary module and handle context (e.g., `engage_prober`), and the `get_module_response` function that returns the endppoint result.
 
 If we do not want to change the existing agents and just want to modify their behavior, we can do this by altering their prompt in `prompts.py`
 
 #### Session Variables
 
-We use Flask Session variables to keep track of global values. Anytime an agent needs to refer to something related to the conversation flow (e.g., the current main question, the number of questions asked, etc.) it is likely stored in a session variable (e.g., `session['MAIN_QUESTION_COUNT']`). Note that Flask Session variables don't reset unless you close the window. Simultaneous windows may also run into problems with session variables.
+We use Flask Session variables to keep track of global values. Anytime an agent needs to refer to something related to the conversation flow (e.g., the current main question, the number of questions asked, etc.) it is likely stored in a session variable (e.g., `session['MAIN_QUESTION_COUNT']`). Note that Flask Session variables don't reset unless you close the window. Simultaneous windows may run into problems with session variables.
 
 
 ### Common Errors
@@ -147,14 +153,14 @@ We use Flask Session variables to keep track of global values. Anytime an agent 
 
 #### Retry Logic with Remote Deployment
 
-During our 08/02 - 08/09 experiment week we noticed heavy latency on the Azure OpenAI endpoint. To address this, we implemented two things: 1) a backoff decorator which retries the `get_module_response` function upon an error, and 2) `asyncio.wait_for(...) ` to timeout a request if too much time had passed. Proper parameterization of these functions is crucial for a functional deployment.
+During the small-scale initial pilot during on 08/02 - 08/03, we experienced latency on the Azure OpenAI endpoint. To address this, we implemented two changes: 1) a backoff decorator that retries the `get_module_response` function upon an error, and 2) `asyncio.wait_for(...) ` to timeout a request if too much time had passed. Proper parameterization of these functions can greatly improve the user experience.
 
 #### Deleting Remote Tables
 
-IF our schema changed or we want to reset the remote DB, we need to drop the tables. To do this, I follow this procedure:
+IF the schema changes or you want to reset the remote DB, you will need to drop the tables. To do this, we follow this procedure:
 (Note, these steps were taken from: https://stackoverflow.com/questions/34967878/how-to-drop-all-tables-and-reset-an-azure-sql-database)
 
-- Using Azure Data Studio I connect to the remote DB
+- Using Azure Data Studio, we connect to the remote DB
 - Then we open a "New Query" and remove the foreign keys condition using this query:
 
 ```
@@ -185,7 +191,7 @@ exec (@sql)
  PRINT @sql
 end
 ```
-After this procedure, we need to instantiate the DBs again as defined above.
+After this procedure, you will need to instantiate the DBs again as defined above.
 
 ## Contributing
 
