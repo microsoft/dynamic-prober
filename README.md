@@ -5,7 +5,7 @@ by Alejandro Cuevas, t-alejandroc@microsoft.com/acuevasv@andrew.cmu.edu
 
 ## Installation and First Steps
 
-#### Installation
+### Installation
 
 ```
 git clone
@@ -13,11 +13,25 @@ cd ./project_folder
 pip install -r requirements.txt
 ```
 
-After adding the relevant environment variables as detailed below,
+Set your `.env` variables following the guidelines below
 
 ```
 python src/main.py
 ```
+
+Finally, initiate the database (either locally or remotely) following the guidelines below
+
+
+### Steps to Initiating the Chatbot
+
+There are three main steps required to initiating the chatbot:
+1) Your .env file exists and is parameterized accordingly
+    a) For a remote deployment, make sure the environment variables are set
+    b) We have chosen an appropriate API key.
+2) Run `python src/main.py` (or with `just`: `just run`)
+3) Initiate the database (either locally or remotely)
+    a) To create a DB (locally or remotely), you will need to use the `/init_db` path. For instance, if you have a remote deployment, set LOCAL_DB to 'False' (or leave it empty). Then when you start the application, visit `http://<url_to_application>/init_db`. This will instantiate all the tables as defined in `models.py`. If you have a local deployment (`local_DB = 'True'`), after stating the application, visit `http://<local_url_to_application>/init_db`.
+
 
 #### Environment Variables: API Keys and DB Strings
 
@@ -28,6 +42,7 @@ OPENAIAPIKEY='<org_open_AI_key>'
 AZOPENAIAPIKEY='<azure_open_AI_key>'
 PERSONALKEY = '<personal_open_AI_key>'
 AZENDPOINT='<azure_open_AI_endpoint>'
+APIKEYTYPE = '<openai, azure or personal>'
 DBSERVER = 'db_endpoint'
 DBDATABASE = 'db_name'
 DBUSERNAME = '<db_username>'
@@ -44,54 +59,36 @@ And that it's present in your folder `.env` file in your current working directo
 For example, if you want to test out and work on the application locally here is an example `.env` file:
 
 ```
-OPENAIAPIKEY='<your OPENAI API KEY here if using>'
-AZOPENAIAPIKEY='<your AZURE OPENAI API KEY here if using>'
-PERSONALKEY = '<any additional API key if using>'
-AZENDPOINT='<url to the azure enpoint if using>'
-DBSERVER = 'db_endpoint if using'
-DBDATABASE = 'db_name if using'
-DBUSERNAME = 'user if using'
-DBPASSWORD = 'password if using'
-DBDRIVER = '{ODBC Driver 17 for SQL Server} if using'
-DBSECRETKEY = '<include a secret key here>'
-LOCAL_DB = False
+OPENAIAPIKEY='your-key-here'
+AZOPENAIAPIKEY=''
+PERSONALKEY = ''
+AZENDPOINT=''
+APIKEYTYPE = 'openai'
+DBSERVER = ''
+DBDATABASE = ''
+DBUSERNAME = ''
+DBPASSWORD = ''
+DBDRIVER = ''
+DBSECRETKEY = 'create-a-key-here'
+LOCAL_DB = True
 API_RETRY_DELAY = 5
 API_RETRIES = 3
 API_RETRY_FUNC = constant
 ```
 
-If `LOCAL_DB = True`, you do not need to include parameters for the DB-related variables. 
+To set the API key being used, in `skills.py` check `api_key_type = <api_key_to_use>` and choose one from `['personal', 'azure', 'openai']`.
+
+#### Initiating the Database
+
+`LOCAL_DB` defaults to `FALSE` unless we set the environment variable to 'True.' This variable controls whether to use the remote Azure DB or not. If `LOCAL_DB = True`, you do not need to include parameters for the DB-related variables. Note, for a remote deployment it's important to look at the error handling and/or retry logic defined for `skills/get_module_response()`. This function will handle calls to the GPT endpoint. Using the backoff decorator, for example, to handle retries we need to set a couple of parameters: how many times to retry, how often to retry, etc. 
 
 Keys and DB strings can be modified in `get_db_credentials()` and `get_api_credentials()` in `util.py`
 
-To set the AI key being used, in `skills.py` check `api_key_type = <api_key_to_use>` and choose one from `['personal', 'azure', 'openai']`.
-
-`LOCAL_DB` defaults to `FALSE` unless we set the environment variable to 'True.' This variable controls whether to use the remote Azure DB or not.
-
-#### Initial Steps
-
-To run the chatbot, there are 2 main things we need to check:
-1) Our .env file exists and is parameterized accordingly
-    a) For a remote deployment, need to make sure the environment variables are set
-    b) We have chosen an appropriate API key and have ensured that it's properly set in `skills.py`
-2) Run `python src/main.py` (or with `just`: `just run`)
-3) A DB is in place (either locally or remotely)
-    a) To create a DB (locally or remotely), we should use the `/init_db` path. For instance, if we have a remote deployment, we set LOCAL_DB to 'False' (or leave it empty). Then when we start the application, we can visit `http://<url_to_application>/init_db`. This will instantiate all the tables as defined in `models.py`
-
-Given a functional API key and DB, the application can be deployed. From this point, the main changes we may want to do are: 1) changing the flow of the conversation, 2) changing the questions, and 3) changing the agents.
-
-Note, for a remote deployment it's important to look at the error handling and/or retry logic defined for `skills/get_module_response()`. This function will handle calls to the GPT endpoint. Using the backoff decorator, for example, to handle retries we need to set a couple of parameters: how many times to retry, how often to retry, etc. These parameters matter especially for remote deployments.
-
+Given a functional API key and DB, the application can be deployed. 
 
 #### Global Variables, Other Parameters, and Harcoded Responses
 
 There are additional parameters at the top of `main.py` that dictate some of the app's functionality. It's important to review these and modify as needed.
-
-
-#### Deployment on 08/02 to 08/09
-
-The chatbot commit which was deployed for this week of experiments is tagged in the AI4Society_Interns repo as 'chatbot-deployment-0802-0809' and later 'prod-minor-api-timeout-increases.' 
-
 
 ## Operation
 
@@ -107,17 +104,20 @@ Below is the layout of the project:
 
 #### Study Design and Groups
 
-For our study, we used 3 study groups: 'baseline', 'dynamic probing', and 'active listener.' Please note that the `active listener` is referred to as the `member checker` in our publication.
+This tool was developed for a research study, detailed at [https://arxiv.org/abs/2309.10187v1](https://arxiv.org/abs/2309.10187v1). For our study, we used 3 study groups: 'baseline', 'dynamic probing', and 'active listener.' Please note that the `active listener` is referred to as the `member checker` in the publication.
 
-The study group decision and participant ID from Qualtrics gets passed to the webapp in the following way: http://localhost:5000/user_landing?sg=bs&req=test
+The study group decision and participant ID from Qualtrics is passed to the webapp in the following way: http://localhost:5000/user_landing?sg=bs&req=test
 
 - `sg` is the study group, where we choose from either 'bs', 'dp', and 'al', respectively
 - `req` is the participant ID variable, such as a numeric string `52345`
 
 If no parameters are set, `sg` defaults to `al` and `req` to `test`.
 
-The participant ID is currently generated in Qualtrics and passed to the application when a used lands in the chatbot. Once the user finishes the study, they receive a code based on the `USER_ID` they were assigned when a new entry for them was created in the DB. We add 10000 to this number to keep it in a range of 10000 to 20000 (to do a light validation on Qualtrics). Having a `USER_ID` and a `PARTICIPANT_ID` allows us to match participants' response on Qualtrics with responses on the chatbot.
+The participant ID was generated in Qualtrics and passed to the application when a used lands in the chatbot. Once the user finishes the study, they receive a code based on the `USER_ID` they were assigned when a new entry for them was created in the DB. We add 10000 to this number to keep it in a range of 10000 to 20000. Having a `USER_ID` and a `PARTICIPANT_ID` allows us to match participants' response on Qualtrics with responses on the chatbot.
 
+## Further Directions
+
+From this point, the main changes you may want to do are: 1) changing the flow of the conversation, 2) changing the questions, and 3) changing the agents.
 
 #### Conversation Flow and Questions
 
@@ -125,6 +125,10 @@ Currently, the conversation flow is defined in `INTERVIEW_SEQUENCE` as a list of
 the chatbot will follow the same procedure with each participant; although questions can be added dynamically, the overall flow is the same across each interaction. 
 
 In our application, we call 'main question' the first topic question. That is, in the context of AI alignment, the main question is the question we are interested in hearing a response to. Then, any follow-ups are to further clarify the response we may get to this main question. These main questions can be modified in `question_bank.py`. Currently, we randomly pick a set of questions that we will ask a participant. Then, the follow-up questions are generated based on both the main questions and prior responses.
+
+#### Session Variables
+
+We use Flask Session variables to keep track of global values. Anytime an agent needs to refer to something related to the conversation flow (e.g., the current main question, the number of questions asked, etc.) it is likely stored in a session variable (e.g., `session['MAIN_QUESTION_COUNT']`). Note that Flask Session variables don't reset unless you close the window. Simultaneous windows may run into problems with session variables.
 
 #### Creating or Modifying Agents
 
@@ -138,14 +142,9 @@ In semantic kernel, inputs to prompts are passed through a context. You can see 
 
 We found modularity to be valuable for a multi-agent application. Our functions in `main.py` need to be able to do 3 things: 1) set the correct state for the module of interest, 2) call and receive the raw response from `get_module_response()`, creating an entry in the corresponding DB (if needed) and updating the state as needed, 3) returning the response, carrying out any necessary string manipulations prior to sending the response to the frontend. For these reasons, we include a function that is called as part of the interview flow (e.g., `get_followup_question`), a function that will call the necessary module and handle context (e.g., `engage_prober`), and the `get_module_response` function that returns the endppoint result.
 
-If we do not want to change the existing agents and just want to modify their behavior, we can do this by altering their prompt in `prompts.py`
+If you do not want to change the existing agents and just want to modify their behavior, we can do this by altering their prompt in `prompts.py`
 
-#### Session Variables
-
-We use Flask Session variables to keep track of global values. Anytime an agent needs to refer to something related to the conversation flow (e.g., the current main question, the number of questions asked, etc.) it is likely stored in a session variable (e.g., `session['MAIN_QUESTION_COUNT']`). Note that Flask Session variables don't reset unless you close the window. Simultaneous windows may run into problems with session variables.
-
-
-### Common Errors
+## Common Errors
 
 - If the DB schema changed in a commit. You may get a SQLAlchemy error when it tries to insert a new entry. To fix this, you need to delete the old DB, and recreate the DB.
 - If you are using Azure DB, you may get a connection error if your IP is not whitelisted on Azure Portal.

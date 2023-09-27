@@ -29,32 +29,37 @@ logger = utils.setup_logger(__name__)
     AZ_OPENAI_API_KEY,
     AZURE_ENDPOINT,
     PERSONAL_KEY,
+    API_KEY_TYPE,
 ) = utils.get_api_credentials()
 ORG_ID = None
-api_key_type = "personal"
 
 logger.info("Endpoint: %s", AZURE_ENDPOINT)
 assert (
     OPENAI_API_KEY is not None
     or AZ_OPENAI_API_KEY is not None
     or AZURE_ENDPOINT is not None
-), "No OpenAI API key found. Please set the OPENAI_API_KEY environment variable."
+), "No OpenAI API key found. Please set the OPENAIAPIKEY environment variable."
+
+logger.info("Key Type: %s", API_KEY_TYPE)
+assert (
+    API_KEY_TYPE is not None
+), "No API key type specified. Please set the APIKEYTYPE environment variable."
 
 kernel = sk.Kernel()
 kernel_4 = sk.Kernel()
 
-if api_key_type == "openai":
+if API_KEY_TYPE == "openai":
     kernel.add_chat_service(
         "gpt-3.5-turbo",
         sk_oai.OpenAIChatCompletion("gpt-3.5-turbo", OPENAI_API_KEY, ORG_ID),
     )
-elif api_key_type == "azure":
+elif API_KEY_TYPE == "azure":
     kernel.add_chat_service(
         "azure-gpt-35-turbo",
         sk_oai.AzureChatCompletion("gpt-35-turbo", AZURE_ENDPOINT, AZ_OPENAI_API_KEY),
     )
     # kernel.add_chat_service('azure-gpt-4', sk_oai.AzureChatCompletion('gpt-4', AZURE_ENDPOINT, AZ_OPENAI_API_KEY))
-elif api_key_type == "personal":
+elif API_KEY_TYPE == "personal":
     kernel.add_chat_service(
         "gpt-3.5-turbo",
         sk_oai.OpenAIChatCompletion("gpt-3.5-turbo", PERSONAL_KEY, ORG_ID),
