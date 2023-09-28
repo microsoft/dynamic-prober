@@ -67,45 +67,26 @@ elif API_KEY_TYPE == "personal":
 
 
 # new skills
-judge_reply_type_skill = kernel.create_semantic_function(
-    prompts.GET_REPLY_TYPE_PROMPT_EXTENDED, max_tokens=2000
-)
 prober_depersonalized_skill = kernel.create_semantic_function(
-    prompts.PROBER_PROMPT_DEPERSONALIZED_FEWSHOT, max_tokens=300, temperature=0.5
-)
-prober_personalized_skill = kernel.create_semantic_function(
     prompts.PROBER_PROMPT_DEPERSONALIZED_FEWSHOT, max_tokens=300, temperature=0.5
 )
 active_listener_global_skill = kernel.create_semantic_function(
     prompts.ACTIVE_LISTENER_GLOBAL, max_tokens=2000
 )
-ontopic_skill = kernel.create_semantic_function(
-    prompts.ONTOPIC_FLOW_PROMPT, max_tokens=2000
-)
 
 
 try:
     logger.info("Starting LLM modules...")
-    judge_reply_type = AIModel("judge_reply_type", kernel, judge_reply_type_skill)
-    judge_reply_type.context["history"] = ""
 
     prober_depersonalized = AIModel(
         "prober_depersonalized", kernel, prober_depersonalized_skill
     )
     prober_depersonalized.context["history"] = ""
 
-    prober_personalized = AIModel(
-        "prober_personalized", kernel, prober_personalized_skill
-    )
-    prober_personalized.context["history"] = ""
-
     global_active_listener = AIModel(
         "global_active_listener", kernel, active_listener_global_skill
     )
     global_active_listener.context["history"] = ""
-
-    ontopic_flow = AIModel("ontopic_skill", kernel, ontopic_skill)
-    ontopic_flow.context["history"] = ""
 
     logger.info("LLM modules started...")
 except Exception as e:
@@ -134,21 +115,11 @@ async def get_module_response(module_name, no_api_calls=False):
     if no_api_calls:
         return "We invoked {}".format(module_name)
     response = None
-    if module_name == "judge_reply_type":
-        response = await asyncio.wait_for(
-            judge_reply_type.skill.invoke_async(context=judge_reply_type.context),
-            timeout=MAX_API_TIMEOUT,
-        )
-    elif module_name == "prober_depersonalized":
+    if module_name == "prober_depersonalized":
         response = await asyncio.wait_for(
             prober_depersonalized.skill.invoke_async(
                 context=prober_depersonalized.context
             ),
-            timeout=MAX_API_TIMEOUT,
-        )
-    elif module_name == "prober_personalized":
-        response = await asyncio.wait_for(
-            prober_personalized.skill.invoke_async(context=prober_personalized.context),
             timeout=MAX_API_TIMEOUT,
         )
     elif module_name == "global_active_listener":
@@ -160,11 +131,6 @@ async def get_module_response(module_name, no_api_calls=False):
         )
         print(response)
         print(response.result)
-    elif module_name == "ontopic_skill":
-        response = await asyncio.wait_for(
-            ontopic_flow.skill.invoke_async(context=ontopic_flow.context),
-            timeout=MAX_API_TIMEOUT,
-        )
 
     try:
         logger.info(

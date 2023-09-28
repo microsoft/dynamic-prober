@@ -18,11 +18,8 @@ import os
 
 from skills import (
     get_module_response,
-    judge_reply_type,
     prober_depersonalized,
-    prober_personalized,
     global_active_listener,
-    ontopic_flow,
 )
 
 from prompts import PROBER_PROMPT_DEPERSONALIZED_FEWSHOT, ACTIVE_LISTENER_GLOBAL
@@ -300,38 +297,6 @@ def user_landing():
     return render_template("index.html")
 
 
-def engage_judge():
-    judge_reply_type.context["history"] = get_chat_history_as_string()
-    judge_reply_type.context["input"] = session["LAST_INPUT"]
-    json_response = asyncio.run(get_module_response("judge_reply_type"))
-    try:
-        # Assess the response quality
-        json_response = json.loads(json_response)
-        quality = int(json_response["quality"])
-        # If it's a bad response, we invoke a module to respond to it
-        if quality < 3:
-            response = engage_ontopic_handler()
-        else:
-            response = json_response["acknowledgement"]
-    except Exception as e:
-        logger.error(
-            "CHATLOG_ID: {} | PARTICIPANT ID: {} | Error: {}".format(
-                session["CHATLOG_ID"], session["PARTICIPANT_ID"], e
-            )
-        )
-        response = ""
-    return response
-
-
-def engage_ontopic_handler():
-    ontopic_flow.context["history"] = get_chat_history_as_string()
-    json_response = asyncio.run(get_module_response("ontopic_skill"))
-    json_response = json.loads(json_response)
-    response = json_response["best_response"]
-
-    return response
-
-
 def get_chat_history_as_string(recent_only=False):
     if recent_only:
         chatlog = session["RECENT_CHATLOG"]
@@ -355,24 +320,14 @@ def keep_first_question(input_string):
     return first_question
 
 
-def engage_prober(prober_type="depersonalized"):
-    if prober_type == "depersonalized":
-        prober_depersonalized.context["recent_history"] = get_chat_history_as_string(
-            recent_only=True
+def engage_prober():
+    prober_depersonalized.context["recent_history"] = get_chat_history_as_string(
+        recent_only=True
         )
-        prober_depersonalized.context["question_of_interest"] = session[
-            "CURRENT_QUESTION"
+    prober_depersonalized.context["question_of_interest"] = session[
+        "CURRENT_QUESTION"
         ]
-        json_response = asyncio.run(get_module_response("prober_depersonalized"))
-    elif prober_type == "personalized":
-        prober_personalized.context["recent_history"] = get_chat_history_as_string(
-            recent_only=True
-        )
-        prober_personalized.context["background"] = session["BACKGROUND"]
-        prober_personalized.context["question_of_interest"] = session[
-            "CURRENT_QUESTION"
-        ]
-        json_response = asyncio.run(get_module_response("prober_personalized"))
+    json_response = asyncio.run(get_module_response("prober_depersonalized"))
     try:
         json_response = json.loads(json_response.replace("INTERVIEWER ::", "").strip())
         best_response = json_response["question"]
@@ -430,10 +385,10 @@ def get_followup_question():
         session["FOLLOWUP_QUESTION_COUNT"] += 1
         return response
     elif session["INTERVIEW_TYPE"] == "DYNAMIC_PROBING":
-        response = engage_prober(prober_type="depersonalized")
+        response = engage_prober()
         return response
     elif session["INTERVIEW_TYPE"] == "ACTIVE_LISTENER":
-        response = engage_prober(prober_type="personalized")
+        response = engage_prober()
         return response
 
 
