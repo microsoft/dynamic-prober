@@ -56,7 +56,13 @@ def get_db_credentials():
 
 
 def get_api_credentials():
-    OPENAIAPIKEY, AZURE_OPENAIKEY, AZURE_ENDPOINT, PERSONAL_KEY, API_KEY_TYPE = None, None, None, None, None
+    OPENAIAPIKEY, AZURE_OPENAIKEY, AZURE_ENDPOINT, PERSONAL_KEY, API_KEY_TYPE = (
+        None,
+        None,
+        None,
+        None,
+        None,
+    )
 
     load_dotenv()
     OPENAIAPIKEY = os.environ.get("OPENAIAPIKEY")

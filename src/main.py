@@ -323,10 +323,8 @@ def keep_first_question(input_string):
 def engage_prober():
     prober_depersonalized.context["recent_history"] = get_chat_history_as_string(
         recent_only=True
-        )
-    prober_depersonalized.context["question_of_interest"] = session[
-        "CURRENT_QUESTION"
-        ]
+    )
+    prober_depersonalized.context["question_of_interest"] = session["CURRENT_QUESTION"]
     json_response = asyncio.run(get_module_response("prober_depersonalized"))
     try:
         json_response = json.loads(json_response.replace("INTERVIEWER ::", "").strip())
