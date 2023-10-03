@@ -29,32 +29,37 @@ logger = utils.setup_logger(__name__)
     AZ_OPENAI_API_KEY,
     AZURE_ENDPOINT,
     PERSONAL_KEY,
+    API_KEY_TYPE,
 ) = utils.get_api_credentials()
 ORG_ID = None
-api_key_type = "personal"
 
 logger.info("Endpoint: %s", AZURE_ENDPOINT)
 assert (
     OPENAI_API_KEY is not None
     or AZ_OPENAI_API_KEY is not None
     or AZURE_ENDPOINT is not None
-), "No OpenAI API key found. Please set the OPENAI_API_KEY environment variable."
+), "No OpenAI API key found. Please set the OPENAIAPIKEY environment variable."
+
+logger.info("Key Type: %s", API_KEY_TYPE)
+assert (
+    API_KEY_TYPE is not None
+), "No API key type specified. Please set the APIKEYTYPE environment variable."
 
 kernel = sk.Kernel()
 kernel_4 = sk.Kernel()
 
-if api_key_type == "openai":
+if API_KEY_TYPE == "openai":
     kernel.add_chat_service(
         "gpt-3.5-turbo",
         sk_oai.OpenAIChatCompletion("gpt-3.5-turbo", OPENAI_API_KEY, ORG_ID),
     )
-elif api_key_type == "azure":
+elif API_KEY_TYPE == "azure":
     kernel.add_chat_service(
         "azure-gpt-35-turbo",
         sk_oai.AzureChatCompletion("gpt-35-turbo", AZURE_ENDPOINT, AZ_OPENAI_API_KEY),
     )
     # kernel.add_chat_service('azure-gpt-4', sk_oai.AzureChatCompletion('gpt-4', AZURE_ENDPOINT, AZ_OPENAI_API_KEY))
-elif api_key_type == "personal":
+elif API_KEY_TYPE == "personal":
     kernel.add_chat_service(
         "gpt-3.5-turbo",
         sk_oai.OpenAIChatCompletion("gpt-3.5-turbo", PERSONAL_KEY, ORG_ID),
@@ -62,45 +67,26 @@ elif api_key_type == "personal":
 
 
 # new skills
-judge_reply_type_skill = kernel.create_semantic_function(
-    prompts.GET_REPLY_TYPE_PROMPT_EXTENDED, max_tokens=2000
-)
 prober_depersonalized_skill = kernel.create_semantic_function(
-    prompts.PROBER_PROMPT_DEPERSONALIZED_FEWSHOT, max_tokens=300, temperature=0.5
-)
-prober_personalized_skill = kernel.create_semantic_function(
     prompts.PROBER_PROMPT_DEPERSONALIZED_FEWSHOT, max_tokens=300, temperature=0.5
 )
 active_listener_global_skill = kernel.create_semantic_function(
     prompts.ACTIVE_LISTENER_GLOBAL, max_tokens=2000
 )
-ontopic_skill = kernel.create_semantic_function(
-    prompts.ONTOPIC_FLOW_PROMPT, max_tokens=2000
-)
 
 
 try:
     logger.info("Starting LLM modules...")
-    judge_reply_type = AIModel("judge_reply_type", kernel, judge_reply_type_skill)
-    judge_reply_type.context["history"] = ""
 
     prober_depersonalized = AIModel(
         "prober_depersonalized", kernel, prober_depersonalized_skill
     )
     prober_depersonalized.context["history"] = ""
 
-    prober_personalized = AIModel(
-        "prober_personalized", kernel, prober_personalized_skill
-    )
-    prober_personalized.context["history"] = ""
-
     global_active_listener = AIModel(
         "global_active_listener", kernel, active_listener_global_skill
     )
     global_active_listener.context["history"] = ""
-
-    ontopic_flow = AIModel("ontopic_skill", kernel, ontopic_skill)
-    ontopic_flow.context["history"] = ""
 
     logger.info("LLM modules started...")
 except Exception as e:
@@ -129,21 +115,11 @@ async def get_module_response(module_name, no_api_calls=False):
     if no_api_calls:
         return "We invoked {}".format(module_name)
     response = None
-    if module_name == "judge_reply_type":
-        response = await asyncio.wait_for(
-            judge_reply_type.skill.invoke_async(context=judge_reply_type.context),
-            timeout=MAX_API_TIMEOUT,
-        )
-    elif module_name == "prober_depersonalized":
+    if module_name == "prober_depersonalized":
         response = await asyncio.wait_for(
             prober_depersonalized.skill.invoke_async(
                 context=prober_depersonalized.context
             ),
-            timeout=MAX_API_TIMEOUT,
-        )
-    elif module_name == "prober_personalized":
-        response = await asyncio.wait_for(
-            prober_personalized.skill.invoke_async(context=prober_personalized.context),
             timeout=MAX_API_TIMEOUT,
         )
     elif module_name == "global_active_listener":
@@ -155,11 +131,6 @@ async def get_module_response(module_name, no_api_calls=False):
         )
         print(response)
         print(response.result)
-    elif module_name == "ontopic_skill":
-        response = await asyncio.wait_for(
-            ontopic_flow.skill.invoke_async(context=ontopic_flow.context),
-            timeout=MAX_API_TIMEOUT,
-        )
 
     try:
         logger.info(
