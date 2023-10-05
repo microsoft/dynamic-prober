@@ -16,10 +16,6 @@ jobs:
     pool:
       vmImage: $(imageName)
     steps:
-      - task: CodeQL3000Init@0
-        inputs:
-          Enabled: $[eq(variables['Build.SourceBranch'], 'refs/heads/main')]
-
       - task: CredScan@3
         inputs:
           outputFormat: sarif
