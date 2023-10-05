@@ -1,0 +1,40 @@
+variables:
+  Codeql.Enabled: true
+
+trigger:
+  batch: true
+  branches:
+    include:
+      - main
+
+jobs:
+  - job: ComplianceJob
+    strategy:
+      matrix:
+        windows:
+          imageName: 'windows-latest'
+    pool:
+      vmImage: $(imageName)
+    steps:
+      - task: CodeQL3000Init@0
+        inputs:
+          Enabled: $[eq(variables['Build.SourceBranch'], 'refs/heads/ado')]
+
+      - task: CredScan@3
+        inputs:
+          outputFormat: sarif
+          debugMode: false
+
+      - task: ComponentGovernanceComponentDetection@0
+        inputs:
+          scanType: 'Register'
+          verbosity: 'Verbose'
+          alertWarningLevel: 'High'
+
+      - task: PublishSecurityAnalysisLogs@3
+        inputs:
+          ArtifactName: 'CodeAnalysisLogs'
+          ArtifactType: 'Container'
+
+      - task: CodeQL3000Finalize@0
+        condition: always()
