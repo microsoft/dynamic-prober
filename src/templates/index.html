@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Automated Alignment Conversations</title>
+    <title>Dynamic Probing Survey Chatbot</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/flowbite/1.6.5/flowbite.min.css" rel="stylesheet" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/1.6.5/flowbite.min.js"></script>
     <style>
@@ -119,8 +119,7 @@
     <nav class="bg-white border-gray-200 dark:bg-gray-900">
         <div class="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4">
             <a href="#" class="flex items-center">
-                <img src="{{ url_for('static', filename='images/logo.png') }}" class="h-8 mr-3" alt="Logo" />
-                <span class="self-center text-2xl font-semibold whitespace-nowrap dark:text-white">Automated Alignment Conversations</span>
+                <span class="self-center text-2xl font-semibold whitespace-nowrap dark:text-white">Dynamic Probing Survey Chatbot</span>
             </a>
 
 
@@ -159,10 +158,7 @@
                 <div class="downwarning">
                     <div>
                         <b>You can submit your answers using CTRL+ENTER.</b><br>
-                        If you want or need to end the conversation early, please return to the qualtrics survey and use the code '19999'.<br><br>
                         <b>Note:</b> Your chat will be lost upon reloading. 
-                        For questions about how Microsoft manages your privacy,
-                        please see the Microsoft Data Privacy Notice <a href='http://go.microsoft.com/fwlink/?LinkId=518021'></a>(http://go.microsoft.com/fwlink/?LinkId=518021)
                     </div>
 
                 </div>
@@ -226,7 +222,7 @@
             upperdiv.innerHTML = upperdiv.innerHTML + `<div class="message">
                 <div class="appmessagediv">
                     <div class="appmessage" id="${typingBubbleId}">
-                        <i id="${typingBubbleId}">Bot is typing...</i>
+                        <i id="${typingBubbleId}">Bot is generating...</i>
                     </div>
                 </div>
             </div>`;
@@ -321,7 +317,6 @@
         // Add some initial messages when the page loads.
         document.addEventListener("DOMContentLoaded", function() {
             addMessage("Hello, thank you for participating in this interview. I am going to ask you a few questions about Artificial Intelligence (AI).", 'app');
-            addMessage("Please note that we are facing delays with our endpoint, so you may receive some slow responses. We thank you for your patience.", 'app');
             addMessage("Type anything to start.", 'app');
         });
     </script>
