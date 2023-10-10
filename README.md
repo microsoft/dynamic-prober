@@ -19,7 +19,7 @@ Set your `.env` variables following the guidelines below
 python src/main.py
 ```
 
-Finally, initiate the database (either locally or remotely) following the guidelines below
+Finally, initiate the database (either locally or remotely), by visiting `http://<url_to_application>/init_db`. You should now be able to run the application successfully.
 
 
 ### Steps to Initiating the Chatbot
@@ -96,7 +96,7 @@ There are additional parameters at the top of `main.py` that dictate some of the
 
 Below is the layout of the project:
 - `main.py` contains the Flask application and dictates the flow of the conversation and the functions that are called.
-- `skills.py` contains the skill definitions. We use Semantic Kernel skills based on the prompts defined in `prompts.py`. These are then wrapped into an `AIModel` class. Lastly, I call all agents from the `get_model_response()` function. The context is maintained inside the `AIModel` class.
+- `skills.py` contains the skill definitions. We use Semantic Kernel skills based on the prompts defined in `prompts.py`. These are then wrapped into an `AIModel` class. Lastly, we call all agents from the `get_model_response()` function. The context is maintained inside the `AIModel` class. Models are initiated using GPT-4; this file can be edited to use GPT-3.5-turbo instead.
 - `prompts.py` contains prompts as constant strings
 - `models.py` contains the database schemas using SQLAlchemy and also other useful classes
 - `utils.py` contains utility functions for logging and credentials
