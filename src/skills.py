@@ -56,8 +56,8 @@ if API_KEY_TYPE == "openai":
     )
     # use GPT-4 rather than 3.5-turbo
     kernel_4.add_chat_service(
-        'gpt-4', 
-        sk_oai.OpenAIChatCompletion('gpt-4', OPENAI_API_KEY, ORG_ID))
+        "gpt-4", sk_oai.OpenAIChatCompletion("gpt-4", OPENAI_API_KEY, ORG_ID)
+    )
 elif API_KEY_TYPE == "azure":
     kernel.add_chat_service(
         "azure-gpt-35-turbo",
@@ -65,8 +65,9 @@ elif API_KEY_TYPE == "azure":
     )
     # use gpt-4 rather than 3.5 turbo
     kernel_4.add_chat_service(
-        'azure-gpt-4', 
-        sk_oai.AzureChatCompletion('gpt-4', AZURE_ENDPOINT, AZ_OPENAI_API_KEY))
+        "azure-gpt-4",
+        sk_oai.AzureChatCompletion("gpt-4", AZURE_ENDPOINT, AZ_OPENAI_API_KEY),
+    )
 elif API_KEY_TYPE == "personal":
     kernel.add_chat_service(
         "gpt-3.5-turbo",
