@@ -49,28 +49,40 @@ kernel = sk.Kernel()
 kernel_4 = sk.Kernel()
 
 if API_KEY_TYPE == "openai":
+    # to use gpt-3.5-turbo
     kernel.add_chat_service(
         "gpt-3.5-turbo",
         sk_oai.OpenAIChatCompletion("gpt-3.5-turbo", OPENAI_API_KEY, ORG_ID),
     )
+    # use GPT-4 rather than 3.5-turbo
+    kernel_4.add_chat_service(
+        'gpt-4', 
+        sk_oai.OpenAIChatCompletion('gpt-4', OPENAI_API_KEY, ORG_ID))
 elif API_KEY_TYPE == "azure":
     kernel.add_chat_service(
         "azure-gpt-35-turbo",
         sk_oai.AzureChatCompletion("gpt-35-turbo", AZURE_ENDPOINT, AZ_OPENAI_API_KEY),
     )
-    # kernel.add_chat_service('azure-gpt-4', sk_oai.AzureChatCompletion('gpt-4', AZURE_ENDPOINT, AZ_OPENAI_API_KEY))
+    # use gpt-4 rather than 3.5 turbo
+    kernel_4.add_chat_service(
+        'azure-gpt-4', 
+        sk_oai.AzureChatCompletion('gpt-4', AZURE_ENDPOINT, AZ_OPENAI_API_KEY))
 elif API_KEY_TYPE == "personal":
     kernel.add_chat_service(
         "gpt-3.5-turbo",
         sk_oai.OpenAIChatCompletion("gpt-3.5-turbo", PERSONAL_KEY, ORG_ID),
     )
+    kernel_4.add_chat_service(
+        "gpt-4",
+        sk_oai.OpenAIChatCompletion("gpt-4", PERSONAL_KEY, ORG_ID),
+    )
 
 
 # new skills
-prober_depersonalized_skill = kernel.create_semantic_function(
+prober_depersonalized_skill = kernel_4.create_semantic_function(
     prompts.PROBER_PROMPT_DEPERSONALIZED_FEWSHOT, max_tokens=300, temperature=0.5
 )
-active_listener_global_skill = kernel.create_semantic_function(
+active_listener_global_skill = kernel_4.create_semantic_function(
     prompts.ACTIVE_LISTENER_GLOBAL, max_tokens=2000
 )
 
@@ -79,12 +91,12 @@ try:
     logger.info("Starting LLM modules...")
 
     prober_depersonalized = AIModel(
-        "prober_depersonalized", kernel, prober_depersonalized_skill
+        "prober_depersonalized", kernel_4, prober_depersonalized_skill
     )
     prober_depersonalized.context["history"] = ""
 
     global_active_listener = AIModel(
-        "global_active_listener", kernel, active_listener_global_skill
+        "global_active_listener", kernel_4, active_listener_global_skill
     )
     global_active_listener.context["history"] = ""
 
