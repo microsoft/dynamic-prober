@@ -1,7 +1,8 @@
 ## README
 
-by Alejandro Cuevas, t-alejandroc@microsoft.com/acuevasv@andrew.cmu.edu
+This chatbot was created for the research posted at [https://arxiv.org/abs/2309.10187](https://arxiv.org/abs/2309.10187). If you use it in your work, please cite:
 
+Villalba AC, Brown EM, Scurrell JV, Entenmann J, Daepp MIG (2023). Automated Interviewer or Augmented Survey? Collecting Social Data with Large Language Models. arXiv preprint [arXiv:2309.10187](https://arxiv.org/abs/2309.10187).
 
 ## Installation and First Steps
 
